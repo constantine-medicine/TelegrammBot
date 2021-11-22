@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.SQLite;
 using System.Threading.Tasks;
 using Telegram.Bot;
 
@@ -7,6 +8,8 @@ namespace TelegrammBot
     class Program
     {
         private const string Token = "2124891882:AAFFnt3BrOvHK9FudKqzwHMvLvVW7etCVhs";
+
+        public static SQLiteConnection connection;
 
         static void Main(string[] args)
         {
@@ -22,7 +25,6 @@ namespace TelegrammBot
                     Console.WriteLine(ex.Message);
                 }
             }
-            Console.ReadLine();
         }
 
         static async Task GetMessage()
@@ -47,6 +49,11 @@ namespace TelegrammBot
                             Console.WriteLine("Привет дорогой");
                             await bot.SendTextMessageAsync(message.Chat.Id, $"Привет дорогой, {message.Chat.Username}");
                         }
+                        if (message.Text == "/reg")
+                        {
+                            Registration(message.Chat.Id.ToString(), message.Chat.Username);
+                            await bot.SendTextMessageAsync(message.Chat.Id, $"Пользователь {message.Chat.Username} зарегестрирован");
+                        }
                         offset = update.Id + 1;
                     }
                 }
@@ -55,6 +62,29 @@ namespace TelegrammBot
             {
                 Console.WriteLine(ex.Message);
             }
+        }
+
+        private static void Registration(string chatId, string username)
+        {
+            try
+            {
+                using (connection = new SQLiteConnection(@"Data source = C:\Users\rakin\source\repos\TelegrammBot\TelegrammBot\bin\Db.db;"))
+                {
+                    using (var command = new SQLiteCommand(connection))
+                    {
+                        connection.Open();
+                        command.CommandText = "INSERT INTO Users VALUES(@chatId, @username)";
+                        command.Parameters.AddWithValue("@chatId", chatId);
+                        command.Parameters.AddWithValue("@username", username);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
         }
     }
 }
