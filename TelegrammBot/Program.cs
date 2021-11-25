@@ -2,6 +2,10 @@
 using System.Data.SQLite;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Bot.Types.Enums;
+using System.Net;
+using WeatherLibrary;
 
 namespace TelegrammBot
 {
@@ -12,13 +16,12 @@ namespace TelegrammBot
         public static SQLiteConnection connection;
 
         static void Main(string[] args)
-        {
+        {            
             while (true)
             {
                 try
                 {
                     GetMessage().Wait();
-                    Console.WriteLine("Check");
                 }
                 catch (Exception ex)
                 {
@@ -43,16 +46,20 @@ namespace TelegrammBot
                     foreach (var update in updates)
                     {
                         var message = update.Message;
-
-                        if (message.Text == "Привет")
+                        
+                        if (message != null)
                         {
-                            Console.WriteLine("Привет дорогой");
-                            await bot.SendTextMessageAsync(message.Chat.Id, $"Привет дорогой, {message.Chat.Username}");
                         }
-                        if (message.Text == "/reg")
+                        if (message != null && message.Text == "/start")
                         {
-                            Registration(message.Chat.Id.ToString(), message.Chat.Username);
-                            await bot.SendTextMessageAsync(message.Chat.Id, $"Пользователь {message.Chat.Username} зарегестрирован");
+                            Console.WriteLine($"Привет {message.Chat.Username}");
+                            await bot.SendTextMessageAsync(message.Chat.Id, $"Привет, {message.Chat.Username}.");
+                            await bot.SendTextMessageAsync(message.Chat.Id, "Напишите город, чтобы узнать погоду.");
+
+                        }
+                        if (message != null && WeatherController.GetWeather($"{message.Text}") != string.Empty)
+                        {
+                            await bot.SendTextMessageAsync(message.Chat.Id, WeatherController.GetWeather($"{ message.Text}"));
                         }
                         offset = update.Id + 1;
                     }
@@ -85,6 +92,22 @@ namespace TelegrammBot
                 Console.WriteLine(ex.Message);
             }
 
+        }
+
+        private static void BoardButtons()
+        {
+            var board = new KeyboardButton("");
+            var keyboard = new ReplyKeyboardMarkup(board)
+            {
+                Keyboard = new[]
+                {
+                    new[]
+                    {
+                        new KeyboardButton("Регистрация"),
+                        new KeyboardButton("Погода за окном")
+                    }
+                }
+            };
         }
     }
 }
